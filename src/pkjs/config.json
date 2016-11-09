@@ -47,6 +47,10 @@
         "defaultValue": "FFFFFF",
         "label": "Dot Color",
         "allowGray": true
+      },
+      {
+        "type": "submit",
+        "defaultValue": "Save"
       }
     ]
   }

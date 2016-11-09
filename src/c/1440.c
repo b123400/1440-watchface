@@ -1,10 +1,12 @@
 #include <pebble.h>
+#include <stdio.h>
 #include "math.h"
 
 static Window *s_window;
 static Layer *bitmap_layer;
 
-static GColor ttmm_red;
+static GColor background_color;
+static GColor dot_color;
 
 static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
   time_t now = time(NULL);
@@ -16,7 +18,7 @@ static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
   GRect bounds = layer_get_bounds(layer);
 
   // background color
-  graphics_context_set_fill_color(ctx, ttmm_red);
+  graphics_context_set_fill_color(ctx, background_color);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
   float x_margin = 0.1;
@@ -27,7 +29,7 @@ static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
   float start_y = bounds.size.h * y_margin;
   float y_step = (bounds.size.h * (1 - y_margin * 2)) / 11;
 
-  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_context_set_fill_color(ctx, dot_color);
   for (int i = 0; i < 12; i++) {
     for (int j = 0; j < 12; j++) {
 
@@ -67,8 +69,29 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   }
 }
 
+static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) {
+  // Read color preferences
+  Tuple *bg_color_t = dict_find(iter, MESSAGE_KEY_background_color);
+  if(bg_color_t) {
+    background_color = GColorFromHEX(bg_color_t->value->int32);
+  }
+  Tuple *dot_color_t = dict_find(iter, MESSAGE_KEY_dot_color);
+  if(dot_color_t) {
+    dot_color = GColorFromHEX(dot_color_t->value->int32);
+  }
+  Tuple *fill_t = dict_find(iter, MESSAGE_KEY_fill_direction);
+  if(fill_t) {
+    char *thing = fill_t->value->cstring;
+  }
+  layer_mark_dirty(bitmap_layer);
+}
+
 static void prv_init(void) {
-  ttmm_red = GColorFromRGBA(205, 34, 49, 255);
+  background_color = GColorFromRGBA(205, 34, 49, 255);
+  dot_color = GColorWhite;
+
+  app_message_register_inbox_received(prv_inbox_received_handler);
+  app_message_open(128, 128);
 
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {
@@ -77,7 +100,6 @@ static void prv_init(void) {
   });
   const bool animated = true;
   window_stack_push(s_window, animated);
-
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
 }
 
