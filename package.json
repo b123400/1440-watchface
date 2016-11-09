@@ -2,9 +2,13 @@
   "name": "1440",
   "author": "b123400",
   "version": "1.0.0",
-  "keywords": ["minimalism"],
+  "keywords": [
+    "minimalism"
+  ],
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "pebble-clay": "^1.0.3"
+  },
   "pebble": {
     "displayName": "1440",
     "uuid": "48112b82-5190-4373-bfb2-0e2d1a782a93",
@@ -20,10 +24,13 @@
       "watchface": true
     },
     "messageKeys": [
-      "dummy"
+      "fill_direction",
+      "background_color",
+      "dot_color"
     ],
     "resources": {
       "media": []
-    }
+    },
+    "capabilities": [ "configurable" ]
   }
 }
