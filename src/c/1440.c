@@ -7,6 +7,12 @@ static Layer *bitmap_layer;
 
 static GColor background_color;
 static GColor dot_color;
+static int direction = 0;
+// 0 top
+// 1 bottom
+// 2 left
+// 3 right
+// 4 random
 
 static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
   time_t now = time(NULL);
@@ -34,8 +40,27 @@ static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
     for (int j = 0; j < 12; j++) {
 
       int dot_size = 3;
-      if (i * 12 + j < tens) {
-        dot_size = 7;
+
+      if (direction == 0) {
+        // top
+        if (j * 12 + i < tens) {
+          dot_size = 7;
+        }
+      } else if (direction == 1) {
+        // bottom
+        if (143 - (j * 12 + i) < tens) {
+          dot_size = 7;
+        }
+      } else if (direction == 2) {
+        // left
+        if (i * 12 + j < tens) {
+          dot_size = 7;
+        }
+      } else if (direction == 3) {
+        //right
+        if ((11-i) * 12 + j < tens) {
+          dot_size = 7;
+        }
       }
 
       GRect dot = GRect(
@@ -82,6 +107,17 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
   Tuple *fill_t = dict_find(iter, MESSAGE_KEY_fill_direction);
   if(fill_t) {
     char *thing = fill_t->value->cstring;
+    if (strcmp(thing, "top") == 0) {
+      direction = 0;
+    } else if (strcmp(thing, "bottom") == 0) {
+      direction = 1;
+    } else if (strcmp(thing, "left") == 0) {
+      direction = 2;
+    } else if (strcmp(thing, "right") == 0) {
+      direction = 3;
+    } else if (strcmp(thing, "random") == 0) {
+      direction = 4;
+    }
   }
   layer_mark_dirty(bitmap_layer);
 }
