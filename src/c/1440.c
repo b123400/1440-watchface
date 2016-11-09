@@ -44,6 +44,29 @@ static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
   float start_y = bounds.size.h * y_margin;
   float y_step = (bounds.size.h * (1 - y_margin * 2)) / 11;
 
+  int map[12][12];
+
+  if (direction == 4) {
+    for (int i = 0; i < 12; i++) {
+      for (int j = 0; j < 12; j++) {
+        if (i * 12 + j < tens) {
+          map[i][j] = 1;
+        } else {
+          map[i][j] = 0;
+        }
+      }
+    }
+
+    srand(time(NULL));
+    for (int i = 0; i < 144; i++) {
+      int from = rand() % 144;
+      int to = rand() % 144;
+      int val = map[from / 12][from % 12];
+      map[from / 12][from % 12] = map[to / 12][to % 12];
+      map[to / 12][to % 12] = val;
+    }
+  }
+
   graphics_context_set_fill_color(ctx, dot_color);
   for (int i = 0; i < 12; i++) {
     for (int j = 0; j < 12; j++) {
@@ -68,6 +91,10 @@ static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
       } else if (direction == 3) {
         //right
         if ((11-i) * 12 + j < tens) {
+          dot_size = 7;
+        }
+      } else if (direction == 4) {
+        if (map[i][j] == 1) {
           dot_size = 7;
         }
       }
