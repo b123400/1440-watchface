@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include "math.h"
 
+#define SETTINGS_KEY 1
+
 static Window *s_window;
 static Layer *bitmap_layer;
 
@@ -13,6 +15,13 @@ static int direction = 0;
 // 2 left
 // 3 right
 // 4 random
+
+typedef struct ClaySettings {
+  GColor BackgroundColor;
+  GColor DotColor;
+  int Direction;
+} ClaySettings;
+static ClaySettings settings;
 
 static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
   time_t now = time(NULL);
@@ -120,11 +129,26 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context) 
     }
   }
   layer_mark_dirty(bitmap_layer);
+
+  settings.BackgroundColor = background_color;
+  settings.DotColor = dot_color;
+  settings.Direction = direction;
+  persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
 }
 
 static void prv_init(void) {
-  background_color = GColorFromRGBA(205, 34, 49, 255);
-  dot_color = GColorWhite;
+
+  // default settings
+  settings.BackgroundColor = GColorFromRGBA(205, 34, 49, 255);
+  settings.DotColor = GColorWhite;
+  settings.Direction = 0;
+
+  persist_read_data(SETTINGS_KEY, &settings, sizeof(settings));
+
+  // apply saved data
+  background_color = settings.BackgroundColor;
+  dot_color = settings.DotColor;
+  direction = settings.Direction;
 
   app_message_register_inbox_received(prv_inbox_received_handler);
   app_message_open(128, 128);
