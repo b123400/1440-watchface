@@ -3,6 +3,7 @@
 #include "math.h"
 
 #define SETTINGS_KEY 1
+#define ROUND_RING_COUNT 8
 
 static Window *s_window;
 static Layer *bitmap_layer;
@@ -23,12 +24,56 @@ typedef struct ClaySettings {
 } ClaySettings;
 static ClaySettings settings;
 
+static GPoint coordinate_of(GRect bounds, int x_offset, int y_offset) {
+  bool is_round = PBL_IF_ROUND_ELSE(true, false);
+  if (!is_round) {
+    float x_margin = 0.1;
+    float y_margin = 0.1;
+    float start_x = bounds.size.w * x_margin;
+    float x_step = (bounds.size.w * (1 - x_margin * 2)) / 11;
+
+    float start_y = bounds.size.h * y_margin;
+    float y_step = (bounds.size.h * (1 - y_margin * 2)) / 11;
+
+    return GPoint(start_x + x_step * x_offset, start_y + y_step * y_offset);
+  }
+  const int dots_in_ring[ROUND_RING_COUNT] = { 6, 9, 12, 15, 18, 21, 27, 36 };
+  int index = x_offset * 12 + y_offset;
+  int ring_index = 0;
+  int index_in_ring = 0;
+  int acc = 0;
+  for (int i = 0; i < ROUND_RING_COUNT; i++) {
+    if (index >= acc && index < acc + dots_in_ring[i]) {
+      ring_index = i;
+      index_in_ring = index - acc;
+      break;
+    } else {
+      acc += dots_in_ring[i];
+    }
+  }
+
+  float center_void = 30.0;
+
+  float ring_height = (bounds.size.h - center_void) / (ROUND_RING_COUNT * 2.0);
+  float radius = (center_void / 2.0) + ring_height * ring_index;
+  GPoint center = grect_center_point(&bounds);
+  int dots_count = dots_in_ring[ring_index];
+  int32_t angle = (TRIG_MAX_ANGLE / dots_count) * index_in_ring;
+
+  return GPoint(
+    center.x + (int32_t)radius * sin_lookup(angle) / TRIG_MAX_RATIO,
+    center.y + (int32_t)radius * cos_lookup(angle) / TRIG_MAX_RATIO
+  );
+}
+
 static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
   int minute = (*t).tm_min;
   int hour = (*t).tm_hour;
   int tens = (int)(minute + hour * 60) / 10;
+  const int small_dot_size = PBL_IF_ROUND_ELSE(2, 3);
+  const int big_dot_size = PBL_IF_ROUND_ELSE(4, 7);
 
   GRect bounds = layer_get_bounds(layer);
 
@@ -36,13 +81,6 @@ static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
   graphics_context_set_fill_color(ctx, background_color);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
-  float x_margin = 0.1;
-  float y_margin = 0.1;
-  float start_x = bounds.size.w * x_margin;
-  float x_step = (bounds.size.w * (1 - x_margin * 2)) / 11;
-
-  float start_y = bounds.size.h * y_margin;
-  float y_step = (bounds.size.h * (1 - y_margin * 2)) / 11;
 
   int map[12][12];
 
@@ -71,37 +109,38 @@ static void bitmap_layer_update_proc(Layer *layer, GContext* ctx) {
   for (int i = 0; i < 12; i++) {
     for (int j = 0; j < 12; j++) {
 
-      int dot_size = 3;
+      int dot_size = small_dot_size;
 
       if (direction == 0) {
         // top
         if (j * 12 + i < tens) {
-          dot_size = 7;
+          dot_size = big_dot_size;
         }
       } else if (direction == 1) {
         // bottom
         if (143 - (j * 12 + i) < tens) {
-          dot_size = 7;
+          dot_size = big_dot_size;
         }
       } else if (direction == 2) {
         // left
         if (i * 12 + j < tens) {
-          dot_size = 7;
+          dot_size = big_dot_size;
         }
       } else if (direction == 3) {
         //right
         if ((11-i) * 12 + j < tens) {
-          dot_size = 7;
+          dot_size = big_dot_size;
         }
       } else if (direction == 4) {
         if (map[i][j] == 1) {
-          dot_size = 7;
+          dot_size = big_dot_size;
         }
       }
 
+      GPoint point = coordinate_of(bounds, i, j);
       GRect dot = GRect(
-        (int)round(start_x + x_step * i - (dot_size-1)/2),
-        (int)round(start_y + y_step * j - (dot_size-1)/2),
+        (int)round(point.x - (dot_size-1)/2),
+        (int)round(point.y - (dot_size-1)/2),
         dot_size,
         dot_size);
       graphics_fill_rect(ctx, dot, 0, GCornerNone);
