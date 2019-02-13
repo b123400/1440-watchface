@@ -17,6 +17,7 @@
     "targetPlatforms": [
       "aplite",
       "basalt",
+      "chalk",
       "diorite",
       "emery"
     ],
@@ -31,6 +32,8 @@
     "resources": {
       "media": []
     },
-    "capabilities": [ "configurable" ]
+    "capabilities": [
+      "configurable"
+    ]
   }
 }
