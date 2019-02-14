@@ -13,8 +13,8 @@ static GColor dot_color;
 static int direction = 0;
 // 0 top
 // 1 bottom
-// 2 left
-// 3 right
+// 2 left (round = in to out)
+// 3 right (round = out to in)
 // 4 random
 
 typedef struct ClaySettings {
